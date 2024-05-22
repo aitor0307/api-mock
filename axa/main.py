@@ -7,10 +7,11 @@ import re
 from pydantic import BaseModel, Field, field_validator, computed_field
 from typing import Optional, List
 from flask import Flask
-from models.mymodels import ResponseModel, Client, Policies, ApiNotValid, ValidateMode, NotFoundModel
+from models.mymodels import ResponseModel, Client, Policies, ApiNotValid, ValidateMode, NotFoundModel, NoAccess
 from services.ddbb import DDBB
 import logging
 from flask import request
+from functools import wraps
 
 app = Flask(__name__)
 SECRET_KEY = os.urandom(24)
@@ -27,7 +28,22 @@ Clients: https://run.mocky.io/v3/532e77dc-2e2d-4a0c-91fd-5ea92ff5d615
 Policies: https://run.mocky.io/v3/289c72a0-8190-4a15-9a15-4118dc2fbde6 
 """
 
-@app.route('/user/<string:mode>/<string:user>') #'e519ddb1-cd20-4af4-ad40-e3051c03c075'
+
+def login_is_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):        
+        if ddbb.retrieve_user(kwargs["mode"], kwargs["admin_user"]).role != 'admin':  #authorization required
+            return app.response_class(
+                response=NoAccess().model_dump_json(),
+                status=200,
+                mimetype='application/json'
+            )
+        else:
+            return f(*args, **kwargs)
+    return decorated_function
+
+
+@app.route('/user/<string:mode>/<string:user>')
 def user(mode, user):
     app.logger.info(f'''This endpoint will: \nGet user data filtered by user id -> Can be accessed by users with role "users" and "admin" 
                     \nGet user data filtered by user name -> Can be accessed by users with role "users" and "admin" ''')
@@ -58,7 +74,8 @@ def user(mode, user):
 
 
 ## ONLY FOR ADMIN USERS
-@app.route('/userpolicies/<string:mode>/<string:admin_user>/<string:user>/') #'e519ddb1-cd20-4af4-ad40-e3051c03c075'
+@app.route('/userpolicies/<string:mode>/<string:admin_user>/<string:user>/')
+@login_is_required
 def userpolicies(mode, user, admin_user):
     app.logger.info(f'This endpoint will: \nGet the list of policies linked to a user name or user id -> Can be accessed by users with role "admin" ')
     modev = ValidateMode(mode=mode)
@@ -69,14 +86,14 @@ def userpolicies(mode, user, admin_user):
             mimetype='application/json'
         )
     try:
-        resp = ddbb.retrieve_user_policies(mode, user, admin_user, "table" if request.args.get("output") == "table" else "json")
+        resp = ddbb.retrieve_user_policies(mode, user, "table" if request.args.get("output") == "table" else "json")
     except KeyError:
         return app.response_class(
             response=NotFoundModel().model_dump_json(),
             status=201,
             mimetype='application/json'
         )
-    app.logger.debug(resp[1])
+
     response = app.response_class(
             response=resp[0],
             status=200,
@@ -86,7 +103,8 @@ def userpolicies(mode, user, admin_user):
     return response
 
 ## ONLY FOR ADMIN USERS
-@app.route('/policyuser/<string:policynumber>/<string:mode>/<string:admin_user>/') #'e519ddb1-cd20-4af4-ad40-e3051c03c075'
+@app.route('/policyuser/<string:policynumber>/<string:mode>/<string:admin_user>/')
+@login_is_required
 def policyuser(policynumber, mode, admin_user):
     app.logger.info(f'This endpoint will: \nGet the user linked to a policy number -> Can be accessed by users with role "admin"  ')
     modev = ValidateMode(mode=mode)
@@ -97,7 +115,7 @@ def policyuser(policynumber, mode, admin_user):
             mimetype='application/json'
         )
     try:
-        resp = ddbb.retrieve_policy(policynumber, mode, admin_user)
+        resp = ddbb.retrieve_policy(policynumber, mode)
     except KeyError:
         return app.response_class(
             response=NotFoundModel().model_dump_json(),
@@ -111,6 +129,13 @@ def policyuser(policynumber, mode, admin_user):
         mimetype='application/json'
     )
     return response
+
+
+@app.route('/testadmin/<string:mode>/<string:admin_user>/') #'e519ddb1-cd20-4af4-ad40-e3051c03c075'
+@login_is_required
+def testadmin(mode, admin_user):
+    app.logger.info(f'This endpoint will: \nGet the user a determine its role')
+    return "User is admin"
 
 
 if __name__ == '__main__':

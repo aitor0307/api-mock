@@ -15,25 +15,16 @@ class DDBB():
         t[mode] = user
         return Client(**t)
 
-    def retrieve_policy(self, policynumber, mode, user) -> Client:
+
+    def retrieve_policy(self, policynumber) -> Client:
         userid = self.policies.set_index("id").loc[policynumber].clientId
         customer = self.retrieve_user("id", userid)
+        return customer
 
-        search_user_role = self.clients.set_index(mode).loc[user].to_dict()["role"]
-        if search_user_role == "admin":
-            return customer
-        else:
-            return NoAccess()
-    
-    def retrieve_user_policies(self, mode, user, admin_user, output = "json"):
+
+    def retrieve_user_policies(self, mode, user, output = "json"):
         t = self.clients.set_index(mode).loc[user].to_dict()
         t[mode] = user
         customer = Client(**t)
-
-        search_user_role = self.clients.set_index(mode).loc[admin_user].to_dict()["role"]
-
-        if search_user_role == "admin":
-            return (self.policies.set_index("clientId").loc[customer.id].to_json(orient="records"), "application/json") if output == "json" else (self.policies.set_index("clientId").loc[customer.id].to_html(), "text/html")
-        else:
-            return NoAccess().model_dump_json(), "application/json"
-        
+        return (self.policies.set_index("clientId").loc[customer.id].to_json(orient="records"), "application/json") if output == "json" else (self.policies.set_index("clientId").loc[customer.id].to_html(), "text/html")
+    

@@ -29,8 +29,10 @@ Policies: https://run.mocky.io/v3/289c72a0-8190-4a15-9a15-4118dc2fbde6
 
 @app.route('/user/<string:mode>/<string:user_id>') #'e519ddb1-cd20-4af4-ad40-e3051c03c075'
 def user(mode, user_id):
-    app.logger.info(f'Someone knocked the main door v2')
-    if mode not in ["id", "name"]:
+    app.logger.info(f'''This endpoint will: \nGet user data filtered by user id -> Can be accessed by users with role "users" and "admin" 
+                    \nGet user data filtered by user name -> Can be accessed by users with role "users" and "admin" ''')
+    modev = ValidateMode(mode=mode)
+    if modev.valid == False:
         return app.response_class(
             response=ApiNotValid().model_dump_json(),
             status=200,
@@ -56,7 +58,7 @@ def user(mode, user_id):
 
 @app.route('/userpolicies/<string:mode>/<string:user_id>/') #'e519ddb1-cd20-4af4-ad40-e3051c03c075'
 def userpolicies(mode, user_id):
-    app.logger.info(f'Someone knocked the main door v2')
+    app.logger.info(f'This endpoint will: \nGet the list of policies linked to a user name or user id -> Can be accessed by users with role "admin" ')
     modev = ValidateMode(mode=mode)
     if modev.valid == False:
         return app.response_class(
@@ -65,34 +67,28 @@ def userpolicies(mode, user_id):
             mimetype='application/json'
         )
     try:
-        resp = ddbb.retrieve_user_policies(mode, user_id)
+        resp = ddbb.retrieve_user_policies(mode, user_id, "table" if request.args.get("output") == "table" else "json")
     except KeyError:
         return app.response_class(
             response=NotFoundModel().model_dump_json(),
             status=201,
             mimetype='application/json'
         )
-    
-    if request.args.get("output") == "table":
-        response = app.response_class(
-            response=resp.to_html(),
+    app.logger.debug(resp[1])
+    response = app.response_class(
+            response=resp[0],
             status=200,
-            mimetype='text/html'
+            mimetype=resp[1]
         )
-    else:
-        response = app.response_class(
-            response=resp.to_json(orient="records"),
-            status=200,
-            mimetype='application/json'
-        )
+
     return response
 
 
 @app.route('/policyuser/<string:policynumber>') #'e519ddb1-cd20-4af4-ad40-e3051c03c075'
 def policyuser(policynumber):
-    app.logger.info(f'Someone knocked the main door v2')
+    app.logger.info(f'This endpoint will: \nGet the user linked to a policy number -> Can be accessed by users with role "admin"  ')
     try:
-        resp = ddbb.retrieve_policy_user(policynumber)
+        resp = ddbb.retrieve_policy(policynumber)
     except KeyError:
         return app.response_class(
             response=NotFoundModel().model_dump_json(),

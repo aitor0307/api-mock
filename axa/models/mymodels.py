@@ -1,16 +1,17 @@
 import re
 
 from pydantic import BaseModel, Field, field_validator, computed_field
-from typing import Optional, Dict
+from typing import Optional, Dict, Any
 
 class ResponseModel(BaseModel):
-  id: str
-  age: int
-  name: str
-  nickname: Optional[str] = None
+  data: Any
 
 class NotFoundModel(BaseModel):
-  message: str = "Not found"
+  message: str = "Customer or policy not found"
+
+
+class NoAccess(BaseModel):
+  message: str = "Sorry but your user is not an admin"
 
 
 class ApiNotValid(BaseModel):

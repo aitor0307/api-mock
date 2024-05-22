@@ -12,14 +12,17 @@ class ResponseModel(BaseModel):
 class NotFoundModel(BaseModel):
   message: str = "Not found"
 
+
 class ApiNotValid(BaseModel):
-  message: str = "This method is not valid"
+  error: str = "This method is not valid"
+
 
 class Client(BaseModel):
     id: str
     name: str
     email: str
     role: str
+
 
 class Policies(BaseModel):
     id: str
@@ -52,7 +55,20 @@ class PolicyBase(BaseModel):
             return self.policies[item]
         except:
             return NotFoundModel()
+
+
+class ValidateMode(BaseModel):
+    mode: str
     
+    @computed_field
+    @property
+    def valid(self) -> bool:
+        if self.mode in ["id", "name"]:
+            return True
+        else:
+            return False
+        
+
 """    
     @field_validator("cf_driver426551")
     def check_fleet(cls, value):

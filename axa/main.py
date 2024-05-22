@@ -7,9 +7,10 @@ import re
 from pydantic import BaseModel, Field, field_validator, computed_field
 from typing import Optional, List
 from flask import Flask
-from models.mymodels import ResponseModel, Client, Policies, ApiNotValid
+from models.mymodels import ResponseModel, Client, Policies, ApiNotValid, ValidateMode, NotFoundModel
 from services.ddbb import DDBB
 import logging
+from flask import request
 
 app = Flask(__name__)
 SECRET_KEY = os.urandom(24)
@@ -35,36 +36,70 @@ def user(mode, user_id):
             status=200,
             mimetype='application/json'
         )
-    resp = ddbb.retrieve_user(mode, user_id)
+    try:
+        resp = ddbb.retrieve_user(mode, user_id)
+        
+    except KeyError:
+        return app.response_class(
+            response=NotFoundModel().model_dump_json(),
+            status=201,
+            mimetype='application/json'
+        )
+    
     response = app.response_class(
-        response=resp.model_dump_json(),
-        status=200,
-        mimetype='application/json'
-    )
+            response=resp.model_dump_json(),
+            status=200,
+            mimetype='application/json'
+        )
+    
     return response
 
-@app.route('/userpolicies/<string:mode>/<string:user_id>') #'e519ddb1-cd20-4af4-ad40-e3051c03c075'
+@app.route('/userpolicies/<string:mode>/<string:user_id>/') #'e519ddb1-cd20-4af4-ad40-e3051c03c075'
 def userpolicies(mode, user_id):
     app.logger.info(f'Someone knocked the main door v2')
-    if mode not in ["id", "name"]:
+    modev = ValidateMode(mode=mode)
+    if modev.valid == False:
         return app.response_class(
             response=ApiNotValid().model_dump_json(),
             status=200,
             mimetype='application/json'
         )
-    resp = ddbb.retrieve_user_policies(mode, user_id)
-    response = app.response_class(
-        response=resp.to_html(),
-        status=200,
-        mimetype='text/html'
-    )
+    try:
+        resp = ddbb.retrieve_user_policies(mode, user_id)
+    except KeyError:
+        return app.response_class(
+            response=NotFoundModel().model_dump_json(),
+            status=201,
+            mimetype='application/json'
+        )
+    
+    if request.args.get("output") == "table":
+        response = app.response_class(
+            response=resp.to_html(),
+            status=200,
+            mimetype='text/html'
+        )
+    else:
+        response = app.response_class(
+            response=resp.to_json(orient="records"),
+            status=200,
+            mimetype='application/json'
+        )
     return response
 
 
 @app.route('/policyuser/<string:policynumber>') #'e519ddb1-cd20-4af4-ad40-e3051c03c075'
 def policyuser(policynumber):
     app.logger.info(f'Someone knocked the main door v2')
-    resp = ddbb.retrieve_policy_user(policynumber)
+    try:
+        resp = ddbb.retrieve_policy_user(policynumber)
+    except KeyError:
+        return app.response_class(
+            response=NotFoundModel().model_dump_json(),
+            status=201,
+            mimetype='application/json'
+        )
+    
     response = app.response_class(
         response=resp.model_dump_json(),
         status=200,

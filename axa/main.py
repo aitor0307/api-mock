@@ -1,13 +1,7 @@
-import requests
-import time
+
 import os
-import json
-import pandas as pd
-import re
-from pydantic import BaseModel, Field, field_validator, computed_field
-from typing import Optional, List
 from flask import Flask
-from models.mymodels import ResponseModel, Client, Policies, ApiNotValid, ValidateMode, NotFoundModel, NoAccess
+from models.mymodels import ApiNotValid, ValidateMode, NotFoundModel, NoAccess
 from services.ddbb import DDBB
 import logging
 from flask import request
@@ -21,12 +15,6 @@ app.logger.setLevel(logging.DEBUG)
 
 # initialize database
 ddbb = DDBB()
-
-"""
-Clients: https://run.mocky.io/v3/532e77dc-2e2d-4a0c-91fd-5ea92ff5d615 
-
-Policies: https://run.mocky.io/v3/289c72a0-8190-4a15-9a15-4118dc2fbde6 
-"""
 
 
 def login_is_required(f):
@@ -102,6 +90,7 @@ def userpolicies(mode, user, admin_user):
 
     return response
 
+
 ## ONLY FOR ADMIN USERS
 @app.route('/policyuser/<string:policynumber>/<string:mode>/<string:admin_user>/')
 @login_is_required
@@ -115,7 +104,7 @@ def policyuser(policynumber, mode, admin_user):
             mimetype='application/json'
         )
     try:
-        resp = ddbb.retrieve_policy(policynumber, mode)
+        resp = ddbb.retrieve_policy(policynumber)
     except KeyError:
         return app.response_class(
             response=NotFoundModel().model_dump_json(),
@@ -139,4 +128,4 @@ def testadmin(mode, admin_user):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)

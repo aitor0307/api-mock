@@ -6,8 +6,14 @@ from typing import Optional, Dict, Any
 class ResponseModel(BaseModel):
   data: Any
 
+
 class NotFoundModel(BaseModel):
   message: str = "Customer or policy not found"
+
+
+class NotNotFoundUser(BaseModel):
+  message: str = "User not found"
+  role: str = "none"
 
 
 class NoAccess(BaseModel):
@@ -68,18 +74,3 @@ class ValidateMode(BaseModel):
             return True
         else:
             return False
-        
-
-"""    
-    @field_validator("cf_driver426551")
-    def check_fleet(cls, value):
-        if value is None:
-            return "NO DRIVER"
-        else:
-            return value
-        
-    @computed_field
-    @property
-    def cf_category_cs_escalations(self) -> bool:
-        return map_categories(categories, self.cf_contact_reason, self.cf_reason_details, self.cf_outcome)
-"""

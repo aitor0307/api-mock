@@ -1,9 +1,9 @@
-from models.mymodels import Client, NoAccess
+from models.mymodels import Client, NotNotFoundUser
 import requests
 import pandas as pd
 
-class DDBB():
-    def __init__(self):
+class DDBB(): 
+    def __init__(self): # build DDBB
         """Initialize a DDBB with the objets from the request"""
         r = requests.get("https://run.mocky.io/v3/532e77dc-2e2d-4a0c-91fd-5ea92ff5d615")
         self.clients = pd.DataFrame(r.json())
@@ -11,9 +11,12 @@ class DDBB():
         self.policies = pd.DataFrame(r.json())
 
     def retrieve_user(self, mode, user) -> Client:
-        t = self.clients.set_index(mode).loc[user].to_dict()
-        t[mode] = user
-        return Client(**t)
+        try:
+            t = self.clients.set_index(mode).loc[user].to_dict()
+            t[mode] = user
+            return Client(**t)
+        except Exception as e:
+            return NotNotFoundUser()
 
 
     def retrieve_policy(self, policynumber) -> Client:

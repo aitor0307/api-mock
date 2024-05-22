@@ -27,8 +27,8 @@ Clients: https://run.mocky.io/v3/532e77dc-2e2d-4a0c-91fd-5ea92ff5d615
 Policies: https://run.mocky.io/v3/289c72a0-8190-4a15-9a15-4118dc2fbde6 
 """
 
-@app.route('/user/<string:mode>/<string:user_id>') #'e519ddb1-cd20-4af4-ad40-e3051c03c075'
-def user(mode, user_id):
+@app.route('/user/<string:mode>/<string:user>') #'e519ddb1-cd20-4af4-ad40-e3051c03c075'
+def user(mode, user):
     app.logger.info(f'''This endpoint will: \nGet user data filtered by user id -> Can be accessed by users with role "users" and "admin" 
                     \nGet user data filtered by user name -> Can be accessed by users with role "users" and "admin" ''')
     modev = ValidateMode(mode=mode)
@@ -39,7 +39,7 @@ def user(mode, user_id):
             mimetype='application/json'
         )
     try:
-        resp = ddbb.retrieve_user(mode, user_id)
+        resp = ddbb.retrieve_user(mode, user)
         
     except KeyError:
         return app.response_class(
@@ -58,8 +58,8 @@ def user(mode, user_id):
 
 
 ## ONLY FOR ADMIN USERS
-@app.route('/userpolicies/<string:mode>/<string:admin_user>/<string:user_id>/') #'e519ddb1-cd20-4af4-ad40-e3051c03c075'
-def userpolicies(mode, user_id, admin_user):
+@app.route('/userpolicies/<string:mode>/<string:admin_user>/<string:user>/') #'e519ddb1-cd20-4af4-ad40-e3051c03c075'
+def userpolicies(mode, user, admin_user):
     app.logger.info(f'This endpoint will: \nGet the list of policies linked to a user name or user id -> Can be accessed by users with role "admin" ')
     modev = ValidateMode(mode=mode)
     if modev.valid == False:
@@ -69,7 +69,7 @@ def userpolicies(mode, user_id, admin_user):
             mimetype='application/json'
         )
     try:
-        resp = ddbb.retrieve_user_policies(mode, user_id, admin_user, "table" if request.args.get("output") == "table" else "json")
+        resp = ddbb.retrieve_user_policies(mode, user, admin_user, "table" if request.args.get("output") == "table" else "json")
     except KeyError:
         return app.response_class(
             response=NotFoundModel().model_dump_json(),
@@ -89,6 +89,13 @@ def userpolicies(mode, user_id, admin_user):
 @app.route('/policyuser/<string:policynumber>/<string:mode>/<string:admin_user>/') #'e519ddb1-cd20-4af4-ad40-e3051c03c075'
 def policyuser(policynumber, mode, admin_user):
     app.logger.info(f'This endpoint will: \nGet the user linked to a policy number -> Can be accessed by users with role "admin"  ')
+    modev = ValidateMode(mode=mode)
+    if modev.valid == False:
+        return app.response_class(
+            response=ApiNotValid().model_dump_json(),
+            status=200,
+            mimetype='application/json'
+        )
     try:
         resp = ddbb.retrieve_policy(policynumber, mode, admin_user)
     except KeyError:

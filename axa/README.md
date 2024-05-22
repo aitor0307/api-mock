@@ -41,5 +41,5 @@ Policies (ids) you can check if they belong to a user:
 ## Nice to have
 
 - Instead of requesting the user to provide the "authentication" via the url request, which should never be done in production, it should be handled with the session cookie or via a header.
-- This authentication can be handled via a 3rd party service which will act as the authentication authority which could issue the bearer request, etc.
+- This authentication can be handled via a 3rd party service which will act as the authentication authority such as okta, auth0, google and many more which could issue the bearer token, etc.
 - The DDBB should definitely be set appart in its own service.

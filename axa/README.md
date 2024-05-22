@@ -1,6 +1,6 @@
 # Flask example to call webservices in the BE and provide an specific response
 
-This is a simple example of a flask webservice calling a mock and ingesting some of its data. As it is meant to be handled via browser and without an authentication service behind, it will ask for the parameters in the url directly.
+This is a simple example of a flask webservice calling a mock and ingesting some of its data. As it is meant to be handled via browser and without an authentication service behind, it will ask for the parameters in the url directly to be easily usable in a browser.
 
 ## How to run
 
